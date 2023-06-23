@@ -1,0 +1,9 @@
+version: '3.7'
+
+services:
+  iris:
+    build: .
+    ports: ["9094:1972","9095:52773"]
+    container_name: sqlbuilder
+    volumes: ["./patientdata:/patientdata", "./src:/code","./key:/key"]
+    command: --key /key/iris.key

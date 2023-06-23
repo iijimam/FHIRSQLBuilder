@@ -1,0 +1,28 @@
+//システム設定変更のため %SYSネームスペースに移動
+set $namespace="%SYS"
+// 事前定義ユーザのパスワードを無期限に設定する（デフォルトパスワードはSYS）
+Do ##class(Security.Users).UnExpireUserPasswords("*")
+// 日本語ロケールに変更（コンテナがUbuntu英語版のためデフォルトは英語ロケール）を利用
+Do ##class(Config.NLS.Locales).Install("jpuw")
+
+//FHIRSQLBuilder用ウェブアプリケーションパスの有効化
+set o=##class(Security.Applications).%OpenId("/csp/fhirsql")
+set o.Enabled=1
+set st=o.%Save()
+set o=##class(Security.Applications).%OpenId("/csp/fhirsql/api/ui")
+set o.Enabled=1
+set st=o.%Save()
+
+
+//FHIRサーバ作成用クラスインポートと実行 
+do $system.OBJ.Load("/opt/app/Setup.cls", "ck")
+set ns="r4fhirnamespace"
+set sc = ##class(ISJ.Setup).setUpFHIR(ns)
+
+//データロード
+write "patient data load....",!
+set $namespace=ns
+set tFHIRApp = "/csp/healthshare/"_ns_"/fhir/r4"
+set sc=##class(HS.FHIRServer.Tools.DataLoader).SubmitResourceFiles("/opt/app/patientdata","FHIRServer",tFHIRApp)
+if $system.Status.IsError(sc) write $system.Status.GetErrorText(sc),!
+halt
